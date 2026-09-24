@@ -1,0 +1,6 @@
+{
+  "name": "Portail Officiel du Village de Ntolo",
+  "description": "Portail numérique officiel du village de Ntolo (Arrondissement de Nlonako, Département du Moungo, Région du Littoral, Cameroun). Informations, chefferie, développement, culture, diaspora et services communautaires.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

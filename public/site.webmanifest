@@ -1,0 +1,17 @@
+{
+  "name": "Village de Ntolo - Portail Officiel",
+  "short_name": "Ntolo Officiel",
+  "description": "Portail numérique officiel du village de Ntolo (Nlonako, Moungo, Cameroun). Chefferie, services citoyens et développement.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#064e3b",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="gradEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="gradGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <!-- Shield shape -->
+  <path d="M50 6 C78 6 90 20 90 48 C90 76 50 94 50 94 C50 94 10 76 10 48 C10 20 22 6 50 6 Z" fill="url(#gradEmerald)" stroke="url(#gradGold)" stroke-width="4"/>
+  <!-- Gold inner border -->
+  <path d="M50 14 C72 14 82 25 82 48 C82 70 50 84 50 84 C50 84 18 70 18 48 C18 25 28 14 50 14 Z" fill="none" stroke="#fef3c7" stroke-width="1.5" opacity="0.8"/>
+  <!-- Central Star of Cameroon -->
+  <polygon points="50,22 53.5,31 63,31 55.5,37 58,46 50,40.5 42,46 44.5,37 37,31 46.5,31" fill="#f59e0b" stroke="#78350f" stroke-width="0.8"/>
+  <!-- Mountain silhouette (Mont Nlonako) -->
+  <path d="M26 68 L42 48 L54 60 L68 44 L80 68 Z" fill="#047857" opacity="0.6"/>
+  <!-- Sacred Tree of Ntolo / Moungo palm -->
+  <path d="M50 48 L50 72" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+  <path d="M50 54 Q40 50 34 56 Q44 58 50 56" fill="#fef08a"/>
+  <path d="M50 54 Q60 50 66 56 Q56 58 50 56" fill="#fef08a"/>
+  <path d="M50 60 Q38 58 32 64 Q42 65 50 62" fill="#fef08a"/>
+  <path d="M50 60 Q62 58 68 64 Q58 65 50 62" fill="#fef08a"/>
+  <!-- Stylized base text NTOLO -->
+  <text x="50" y="80" text-anchor="middle" font-family="Cinzel, serif, sans-serif" font-size="8" font-weight="bold" fill="#ffffff" letter-spacing="1">NTOLO</text>
+</svg>

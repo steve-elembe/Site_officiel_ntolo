@@ -1,0 +1,10 @@
+# Robots.txt pour le Portail Numérique Officiel du Village de Ntolo
+# Arrondissement de Nlonako, Département du Moungo, Cameroun
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Sitemap index
+Sitemap: https://ntolo-village.cm/sitemap.xml
