@@ -1,26 +1,39 @@
 import React from 'react';
-import { Crown, Landmark, Shield, Users, Award, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Crown, Landmark, Shield, Users, Award, FileText, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { PageId } from '../types';
 import { VILLAGE_INFO } from '../data/villageData';
+import { usePageContent } from '../hooks/usePageContent';
+import { getSiteSettings } from '../services/adminService';
 
 interface ChefferieViewProps {
   onNavigate: (page: PageId) => void;
 }
 
 export const ChefferieView: React.FC<ChefferieViewProps> = ({ onNavigate }) => {
+  const content = usePageContent('chefferie');
+  const settings = getSiteSettings();
+
+  const roleSection = content.sections.find((s) => s.id === 'role-chefferie') || content.sections[0];
+  const notablesSection = content.sections.find((s) => s.id === 'conseil-notables') || content.sections[1];
+  const palaisSection = content.sections.find((s) => s.id === 'palais-permanences') || content.sections[2];
+
+  const customSections = content.sections.filter(
+    (s) => s.id !== 'role-chefferie' && s.id !== 'conseil-notables' && s.id !== 'palais-permanences'
+  );
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 mb-3">
           <Crown className="w-3.5 h-3.5 text-emerald-800" />
-          <span>Section 04 • Institutions Coutumières</span>
+          <span>{content.badge || 'Section 04 • Institutions Coutumières'}</span>
         </div>
         <h1 className="font-serif-royal text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Chefferie et Gouvernance Locale
+          {content.title || 'Chefferie et Gouvernance Locale'}
         </h1>
         <p className="text-sm sm:text-base text-slate-600 mt-2">
-          Organisation coutumière, autorité traditionnelle, conseil des notables et comité de développement de Ntolo.
+          {content.description || 'Organisation coutumière, autorité traditionnelle, conseil des notables et comité de développement de Ntolo.'}
         </p>
       </div>
 
@@ -32,84 +45,80 @@ export const ChefferieView: React.FC<ChefferieViewProps> = ({ onNavigate }) => {
           </div>
           <div className="text-center sm:text-left space-y-2">
             <div className="inline-block px-3 py-1 bg-amber-100 text-amber-900 font-bold text-xs rounded-full">
-              Chefferie Traditionnelle de 3e Degré
+              {settings.chiefTitle || 'Chefferie Traditionnelle de 3e Degré'}
             </div>
             <h2 className="font-serif-royal text-2xl sm:text-3xl font-bold text-slate-900">
-              {VILLAGE_INFO.chiefTitle}
+              {settings.chiefName || VILLAGE_INFO.chiefTitle}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
               Auxiliaire de l'Administration Publique Camerounaise • Gardien du Temple Sacré de Ntolo
             </p>
             <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-slate-600">
               <span className="bg-slate-100 px-2.5 py-1 rounded-md font-mono text-amber-800 font-semibold">
-                Arrêté préfectoral : [À compléter]
+                Contact : {settings.contactPhone}
               </span>
               <span className="bg-slate-100 px-2.5 py-1 rounded-md font-mono text-amber-800 font-semibold">
-                Date d’intronisation : [À compléter]
+                Permanence : {settings.secretariatHours}
               </span>
             </div>
           </div>
         </div>
 
         {/* Roles of the Traditional Chief */}
-        <div className="space-y-3">
-          <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wide text-emerald-900">
-            Attributions Républicaines & Coutumières du Chef de Village :
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Conformément aux dispositions du <strong>Décret présidentiel N° 77/245 du 15 juillet 1977</strong> portant organisation des chefferies traditionnelles au Cameroun :
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-700 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
-              <span>Transmission des directives de l'autorité administrative (Sous-Préfet de Nlonako).</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
-              <span>Maintien de la paix sociale, conciliation et arbitrage coutumier des différends.</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
-              <span>Aide au recouvrement de l'impôt et participation aux opérations d'état civil.</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
-              <span>Préservation des terres sacrées, de la forêt coutumière et du patrimoine moral.</span>
-            </div>
+        {roleSection && (
+          <div className="space-y-3">
+            <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wide text-emerald-900">
+              {roleSection.title}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+              {roleSection.content}
+            </p>
+            {roleSection.bullets && roleSection.bullets.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-700 pt-1">
+                {roleSection.bullets.map((b, i) => (
+                  <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 mt-0.5 flex-shrink-0" />
+                    <span>{b}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Council of Notables and Elders */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-          <Users className="w-5 h-5 text-emerald-800" />
-          <span>Le Conseil des Notables & des Sages</span>
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-          Le Conseil des Notables entoure Sa Majesté. Il est constitué des patriarches dépositaires de la mémoire des différents lignages et quartiers de Ntolo.
-        </p>
+      {notablesSection && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Users className="w-5 h-5 text-emerald-800" />
+            <span>{notablesSection.title}</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            {notablesSection.content}
+          </p>
 
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wide">
-            Composition officielle du Conseil coutumier :
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 bg-white rounded-lg border border-slate-200">
-              <span className="font-bold text-slate-800 block">Premier Notable</span>
-              <span className="text-amber-800 font-mono text-[11px]">[À compléter : Nom]</span>
-            </div>
-            <div className="p-3 bg-white rounded-lg border border-slate-200">
-              <span className="font-bold text-slate-800 block">Notable Chargé des Rites</span>
-              <span className="text-amber-800 font-mono text-[11px]">[À compléter : Nom]</span>
-            </div>
-            <div className="p-3 bg-white rounded-lg border border-slate-200">
-              <span className="font-bold text-slate-800 block">Notable Porte-Parole</span>
-              <span className="text-amber-800 font-mono text-[11px]">[À compléter : Nom]</span>
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3">
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wide">
+              Composition officielle du Conseil coutumier :
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                <span className="font-bold text-slate-800 block">Premier Notable</span>
+                <span className="text-amber-800 font-mono text-[11px]">[À compléter : Nom]</span>
+              </div>
+              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                <span className="font-bold text-slate-800 block">Notable Chargé des Rites</span>
+                <span className="text-amber-800 font-mono text-[11px]">[À compléter : Nom]</span>
+              </div>
+              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                <span className="font-bold text-slate-800 block">Notable Porte-Parole</span>
+                <span className="text-amber-800 font-mono text-[11px]">[À compléter : Nom]</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Comité de Développement de Ntolo (CODEV) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
@@ -159,6 +168,34 @@ export const ChefferieView: React.FC<ChefferieViewProps> = ({ onNavigate }) => {
           </button>
         </div>
       </div>
+
+      {/* Sections personnalisées ajoutées par l'administration */}
+      {customSections.map((sec) => (
+        <section key={sec.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+          <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              <span>{sec.title}</span>
+            </h2>
+            {sec.isProvisional && (
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                À compléter
+              </span>
+            )}
+          </div>
+          {sec.subtitle && (
+            <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">{sec.subtitle}</p>
+          )}
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{sec.content}</p>
+          {sec.bullets && sec.bullets.length > 0 && (
+            <ul className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5 text-xs text-slate-700 list-disc list-inside">
+              {sec.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
 
       {/* Administrative Hierarchy */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-sm space-y-4">

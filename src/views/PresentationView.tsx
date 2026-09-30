@@ -1,9 +1,11 @@
 import React from 'react';
-import { Compass, Landmark, MapPin, Mountain, Building2, Users, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Compass, Landmark, MapPin, Mountain, Building2, Users, FileText, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { PageId } from '../types';
 import { VILLAGE_INFO, SLOGAN_CONFIG } from '../data/villageData';
 import { InstitutionalPageHeader } from '../components/InstitutionalPageHeader';
 import { OfficialSourcesSection, OfficialSourceItem } from '../components/OfficialSourcesSection';
+import { usePageContent } from '../hooks/usePageContent';
+import { getSiteSettings } from '../services/adminService';
 
 interface PresentationViewProps {
   onNavigate: (page: PageId) => void;
@@ -34,14 +36,24 @@ const SOURCES_PRESENTATION: OfficialSourceItem[] = [
 ];
 
 export const PresentationView: React.FC<PresentationViewProps> = ({ onNavigate }) => {
+  const content = usePageContent('presentation');
+  const settings = getSiteSettings();
+
+  const ficheSection = content.sections.find((s) => s.id === 'fiche-signaletique') || content.sections[0];
+  const vocationSection = content.sections.find((s) => s.id === 'vocation-terroir') || content.sections[1];
+  const customSections = content.sections.filter(
+    (s) => s.id !== 'fiche-signaletique' && s.id !== 'vocation-terroir'
+  );
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       <InstitutionalPageHeader
-        badge="Portail Officiel • Section 01"
-        title="Présentation Générale de Ntolo"
-        description="Fiche synthétique, identité institutionnelle, vocation du terroir et cadre d'action de la communauté de Ntolo dans l'Arrondissement de Nlonako (Département du Moungo)."
+        badge={content.badge || 'Portail Officiel • Section 01'}
+        title={content.title || 'Présentation Générale de Ntolo'}
+        description={content.description || 'Fiche synthétique, identité institutionnelle, vocation du terroir et cadre d\'action de la communauté de Ntolo dans l\'Arrondissement de Nlonako (Département du Moungo).'}
         icon={Compass}
         onNavigateBack={() => onNavigate('accueil')}
+        provisionalNoticeText={content.provisionalNotice}
       />
 
       {/* Carte d'identité institutionnelle du village (Tableau officiel) */}
@@ -49,23 +61,31 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ onNavigate }
         <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <Landmark className="w-5 h-5 text-emerald-800" />
-            <span>Fiche Signalétique Officielle du Village</span>
+            <span>{ficheSection?.title || 'Fiche Signalétique Officielle du Village'}</span>
           </h2>
           <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
             Données Administratives
           </span>
         </div>
 
+        {ficheSection?.content && (
+          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line pb-1">
+            {ficheSection.content}
+          </p>
+        )}
+
         <div className="overflow-x-auto rounded-xl border border-stone-200">
           <table className="w-full text-xs text-left">
             <tbody className="divide-y divide-stone-100">
               <tr className="bg-stone-50/70">
                 <td className="px-4 py-3 font-bold text-slate-700 w-1/3">Dénomination Officielle</td>
-                <td className="px-4 py-3 font-extrabold text-slate-900">{VILLAGE_INFO.fullName} ({VILLAGE_INFO.name})</td>
+                <td className="px-4 py-3 font-extrabold text-slate-900">
+                  {settings.siteTitle ? `Village de ${settings.siteTitle} (${settings.siteTitle})` : `${VILLAGE_INFO.fullName} (${VILLAGE_INFO.name})`}
+                </td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-bold text-slate-700">Statut Coutumier</td>
-                <td className="px-4 py-3 text-slate-800">{VILLAGE_INFO.administrativeStatus}</td>
+                <td className="px-4 py-3 text-slate-800">{settings.chiefTitle || VILLAGE_INFO.administrativeStatus}</td>
               </tr>
               <tr className="bg-stone-50/70">
                 <td className="px-4 py-3 font-bold text-slate-700">Arrondissement de Rattachement</td>
@@ -85,19 +105,19 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ onNavigate }
               </tr>
               <tr className="bg-stone-50/70">
                 <td className="px-4 py-3 font-bold text-slate-700">Devise Communautaire</td>
-                <td className="px-4 py-3 italic text-amber-900 font-medium">« {SLOGAN_CONFIG.slogan} »</td>
+                <td className="px-4 py-3 italic text-amber-900 font-medium">« {settings.slogan || SLOGAN_CONFIG.slogan} »</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 font-bold text-slate-700">Autorité Traditionnelle</td>
-                <td className="px-4 py-3 text-slate-800">{VILLAGE_INFO.chiefTitle}</td>
+                <td className="px-4 py-3 text-slate-800 font-semibold">{settings.chiefName || VILLAGE_INFO.chiefTitle}</td>
               </tr>
               <tr className="bg-stone-50/70">
-                <td className="px-4 py-3 font-bold text-slate-700">Organe de Concertation</td>
-                <td className="px-4 py-3 text-slate-800">{VILLAGE_INFO.developmentCommittee}</td>
+                <td className="px-4 py-3 font-bold text-slate-700">Contact Institutionnel</td>
+                <td className="px-4 py-3 text-slate-800">{settings.contactEmail} • {settings.contactPhone}</td>
               </tr>
               <tr>
-                <td className="px-4 py-3 font-bold text-slate-700">Superficie Estimée</td>
-                <td className="px-4 py-3 text-slate-600 font-mono">[À compléter : Superficie exacte en km² ou hectares]</td>
+                <td className="px-4 py-3 font-bold text-slate-700">Organe de Concertation</td>
+                <td className="px-4 py-3 text-slate-800">{VILLAGE_INFO.developmentCommittee}</td>
               </tr>
             </tbody>
           </table>
@@ -106,10 +126,20 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ onNavigate }
 
       {/* Vocation & Caractère du Village */}
       <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-lg font-bold text-slate-900 border-b border-stone-100 pb-3">
-          Vocation & Identité de Ntolo
+        <h2 className="text-lg font-bold text-slate-900 border-b border-stone-100 pb-3 flex items-center justify-between">
+          <span>{vocationSection?.title || 'Vocation & Identité de Ntolo'}</span>
+          {vocationSection?.subtitle && (
+            <span className="text-xs text-stone-500 font-normal">{vocationSection.subtitle}</span>
+          )}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        {vocationSection?.content && (
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+            {vocationSection.content}
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
           <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100 space-y-2">
             <h3 className="font-bold text-xs uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
               <Mountain className="w-4 h-4 text-emerald-700" />
@@ -139,6 +169,34 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ onNavigate }
           </div>
         </div>
       </section>
+
+      {/* Sections personnalisées ajoutées par l'administration */}
+      {customSections.map((sec) => (
+        <section key={sec.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+          <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              <span>{sec.title}</span>
+            </h2>
+            {sec.isProvisional && (
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                À compléter
+              </span>
+            )}
+          </div>
+          {sec.subtitle && (
+            <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">{sec.subtitle}</p>
+          )}
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{sec.content}</p>
+          {sec.bullets && sec.bullets.length > 0 && (
+            <ul className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5 text-xs text-slate-700 list-disc list-inside">
+              {sec.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
 
       {/* Navigation Rapide vers les sections institutionnelles */}
       <section className="bg-stone-100/80 rounded-2xl p-6 border border-stone-200 space-y-4">

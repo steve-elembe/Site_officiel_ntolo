@@ -175,8 +175,9 @@ export const CONTRIBUTION_CALLOUT = {
 export const CONTACT_FAST = {
   title: 'Contactez la Chefferie & le Comité de Développement',
   reception: 'Permanences au Palais Royal : Week-ends et jours de concertation',
-  officialPhone: '+237 6XX XX XX XX [À compléter : Numéro Chefferie]',
-  officialEmail: 'contact.ntolo.nlonako@gmail.com [À compléter]',
+  officialPhone: '(+237) 699 21 77 61 / 694 68 18 40',
+  whatsappLines: '(+237) 699 21 77 61 / 694 68 18 40',
+  officialEmail: 'contact.ntolo.nlonako@gmail.com',
   address: 'Palais de la Chefferie de Ntolo, Arrondissement de Nlonako, Cameroun',
 };
 
@@ -188,14 +189,14 @@ export const VILLAGE_INFO = {
   departement: 'Moungo',
   region: 'Littoral',
   country: 'République du Cameroun',
-  administrativeStatus: 'Chefferie traditionnelle de 3e degré [À compléter : Homologation officielle]',
-  chiefTitle: 'Sa Majesté le Chef Traditionnel de Ntolo [À compléter : Nom du Chef]',
-  developmentCommittee: 'Comité de Développement du Village de Ntolo (CODEV Ntolo / [À compléter])',
+  administrativeStatus: 'Chefferie traditionnelle de 3e degré',
+  chiefTitle: 'Sa Majesté le Chef Traditionnel de Ntolo',
+  developmentCommittee: 'Comité de Développement du Village de Ntolo (CODEV Ntolo)',
   locationDetails: 'Bassin du Mont Nlonako, Département du Moungo, Région du Littoral, Cameroun',
-  coordinatesApprox: 'Zone de Nlonako (Moungo) [À compléter : Coordonnées GPS exactes du village]',
-  emergencyPhone: '+237 6XX XX XX XX [À compléter : Numéro d’urgence Chefferie]',
-  healthPostPhone: '+237 6XX XX XX XX [À compléter : Poste de Santé / CSI]',
-  officialEmail: 'contact.ntolo.nlonako@gmail.com [À compléter : Adresse officielle]',
+  coordinatesApprox: 'Zone de Nlonako (Moungo)',
+  emergencyPhone: '(+237) 699 21 77 61 / 694 68 18 40',
+  healthPostPhone: '(+237) 694 68 18 40',
+  officialEmail: 'contact.ntolo.nlonako@gmail.com',
 };
 
 export const PAGES_META: PageMeta[] = [

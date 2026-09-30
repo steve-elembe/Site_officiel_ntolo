@@ -1,4 +1,6 @@
 import { GalleryAlbum, MultimediaItem, PatrimoineItem } from '../types';
+import { db } from './firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 export const ALBUMS_LIST: { id: GalleryAlbum; title: string; description: string; icon: string }[] = [
   {
@@ -371,6 +373,44 @@ const STORAGE_KEY_MEDIA = 'ntolo_gallery_media_v2';
 const STORAGE_KEY_PATRIMOINE = 'ntolo_gallery_patrimoine_v2';
 const EVENT_GALLERY_UPDATED = 'ntolo_gallery_updated';
 
+/**
+ * Initialise la synchronisation Firestore en temps réel pour la galerie photos & vidéos
+ */
+export function initGallerySync() {
+  if (typeof window === 'undefined') return;
+  try {
+    const colRef = collection(db, 'village_media');
+    onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreItems: MultimediaItem[] = [];
+        snapshot.forEach((docSnap) => {
+          firestoreItems.push(docSnap.data() as MultimediaItem);
+        });
+        if (firestoreItems.length > 0) {
+          localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(firestoreItems));
+          window.dispatchEvent(new CustomEvent(EVENT_GALLERY_UPDATED));
+        }
+      } else {
+        // Ensemencement initial de la galerie dans Firestore si vide
+        INITIAL_MEDIA_ITEMS.forEach(async (item) => {
+          try {
+            await setDoc(doc(db, 'village_media', item.id), item);
+          } catch (e) {
+            console.warn('Initial media seed Firestore warning:', e);
+          }
+        });
+      }
+    }, (err) => {
+      console.warn('Firestore onSnapshot village_media error:', err);
+    });
+  } catch (err) {
+    console.warn('Erreur initGallerySync:', err);
+  }
+}
+
+// Initialisation au chargement
+initGallerySync();
+
 export function getStoredMedia(): MultimediaItem[] {
   if (typeof window === 'undefined') return INITIAL_MEDIA_ITEMS;
   try {
@@ -402,6 +442,16 @@ export function saveMediaItem(item: MultimediaItem): MultimediaItem[] {
     updated = [item, ...current];
   }
   localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(updated));
+
+  // Sync to Firestore in real time for all online users
+  try {
+    setDoc(doc(db, 'village_media', item.id), item).catch((err) => {
+      console.warn('Firestore setDoc village_media error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   window.dispatchEvent(new CustomEvent(EVENT_GALLERY_UPDATED));
   return updated;
 }
@@ -410,6 +460,16 @@ export function deleteMediaItem(id: string): MultimediaItem[] {
   const current = getStoredMedia();
   const updated = current.filter((m) => m.id !== id);
   localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(updated));
+
+  // Sync delete to Firestore in real time for all online users
+  try {
+    deleteDoc(doc(db, 'village_media', id)).catch((err) => {
+      console.warn('Firestore deleteDoc village_media error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   window.dispatchEvent(new CustomEvent(EVENT_GALLERY_UPDATED));
   return updated;
 }
@@ -461,4 +521,39 @@ export function resetGalleryToDefault() {
   localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(INITIAL_MEDIA_ITEMS));
   localStorage.setItem(STORAGE_KEY_PATRIMOINE, JSON.stringify(INITIAL_PATRIMOINE_ITEMS));
   window.dispatchEvent(new CustomEvent(EVENT_GALLERY_UPDATED));
+  window.dispatchEvent(new Event('ntolo_gallery_updated'));
 }
+
+/**
+ * Real-time listener for gallery media items from Firestore
+ */
+export function subscribeMedia(
+  callback: (mediaItems: MultimediaItem[]) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const colRef = collection(db, 'village_media');
+    const unsub = onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreMedia: MultimediaItem[] = [];
+        snapshot.forEach((docSnap) => {
+          firestoreMedia.push(docSnap.data() as MultimediaItem);
+        });
+        localStorage.setItem(STORAGE_KEY_MEDIA, JSON.stringify(firestoreMedia));
+        window.dispatchEvent(new CustomEvent(EVENT_GALLERY_UPDATED));
+        window.dispatchEvent(new Event('ntolo_gallery_updated'));
+        callback(firestoreMedia);
+      } else {
+        callback(getStoredMedia());
+      }
+    }, (err) => {
+      console.warn('Firestore subscribeMedia error:', err);
+      callback(getStoredMedia());
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribeMedia failed:', e);
+    return () => {};
+  }
+}
+

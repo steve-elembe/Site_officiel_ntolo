@@ -10,6 +10,7 @@ import {
   getPublicationById,
   getStoredPublications,
   incrementPublicationViews,
+  subscribePublication,
 } from '../services/publicationService';
 import { NtoloLogo } from '../components/NtoloLogo';
 
@@ -28,14 +29,25 @@ export const ArticleDetailView: React.FC<ArticleDetailViewProps> = ({
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
   const [downloadSuccessDoc, setDownloadSuccessDoc] = useState<string | null>(null);
 
-  const article = getPublicationById(articleId);
+  const [article, setArticle] = useState<PublicationItem | null>(() => getPublicationById(articleId) || null);
 
-  // Increment views count once on mount
+  // Subscribe to real-time updates for this article & increment views count once on mount
   useEffect(() => {
     if (articleId) {
       incrementPublicationViews(articleId);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Listener Firestore en temps réel pour cet article
+    const unsub = subscribePublication(articleId, (freshDoc) => {
+      if (freshDoc) {
+        setArticle(freshDoc);
+      }
+    });
+
+    return () => {
+      unsub();
+    };
   }, [articleId]);
 
   if (!article) {

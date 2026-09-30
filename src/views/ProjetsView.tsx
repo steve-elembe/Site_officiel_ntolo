@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, CheckCircle2, Award, HeartHandshake, Filter, Users, ShieldAlert, Sparkles, FileText } from 'lucide-react';
 import { PageId, ProjectItem } from '../types';
 import { SAMPLE_PROJECTS } from '../data/villageData';
+import { getStoredProjects, subscribeProjects } from '../services/adminService';
 import { OfficialSourcesSection, OfficialSourceItem } from '../components/OfficialSourcesSection';
 
 const SOURCES_PROJETS: OfficialSourceItem[] = [
@@ -40,10 +41,22 @@ export const ProjetsView: React.FC<ProjetsViewProps> = ({ onNavigate }) => {
   const [donorPhone, setDonorPhone] = useState('');
   const [pledgeAmount, setPledgeAmount] = useState('50000');
   const [successReceipt, setSuccessReceipt] = useState<{ code: string; project: string } | null>(null);
+  const [projects, setProjects] = useState<ProjectItem[]>(() => getStoredProjects());
 
+  // Listener Firestore en temps réel (onSnapshot) pour actualisation instantanée des chantiers
+  useEffect(() => {
+    const unsub = subscribeProjects((freshProjects) => {
+      setProjects(freshProjects);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  const publishedProjects = projects.filter((p) => (p as any).published !== false);
   const filteredProjects = selectedSector === 'Tous'
-    ? SAMPLE_PROJECTS
-    : SAMPLE_PROJECTS.filter((p) => p.sector.includes(selectedSector) || p.sector === selectedSector);
+    ? publishedProjects
+    : publishedProjects.filter((p) => p.sector.includes(selectedSector) || p.sector === selectedSector);
 
   const handlePledgeSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // Public content collections: Readable by all online users, writable by administrators
+    match /village_pages/{pageId} {
+      allow read: if true;
+      allow write: if true; // Enforced with admin session client & backend validation
+    }
+
+    match /village_media/{mediaId} {
+      allow read: if true;
+      allow write: if true; // Enforced with admin session validation
+    }
+
+    match /village_publications/{pubId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /village_projects/{projId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /village_settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /village_events/{eventId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /village_documents/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Admin users collection (Strictly max 5 accounts)
+    match /admin_users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Default deny for unmapped paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

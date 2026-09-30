@@ -6,7 +6,7 @@ import {
 import { PageId, SiteSettings } from '../types';
 import { SLOGAN_CONFIG } from '../data/villageData';
 import { NtoloLogo } from './NtoloLogo';
-import { getSiteSettings, EVENT_ADMIN_DATA_CHANGED } from '../services/adminService';
+import { getSiteSettings, formatWhatsAppUrl, EVENT_ADMIN_DATA_CHANGED } from '../services/adminService';
 import { SocialShareBar } from './common/SocialShareBar';
 
 interface FooterProps {
@@ -31,11 +31,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const whatsappRaw = settings.whatsappNumber || '+237670001122';
-  const whatsappClean = whatsappRaw.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappClean}&text=${encodeURIComponent(
-    settings.whatsappMessagePreset || 'Bonjour le Secrétariat de Ntolo, je vous contacte via le portail officiel...'
-  )}`;
+  const line1 = settings.whatsappNumber || '+237699217761';
+  const line2 = settings.whatsappNumberSecondary || '+237694681840';
+  const preset = settings.whatsappMessagePreset || 'Bonjour le Secrétariat de Ntolo, je vous contacte via le portail officiel...';
+  const whatsappUrl1 = formatWhatsAppUrl(line1, preset);
+  const whatsappUrl2 = formatWhatsAppUrl(line2, preset);
 
   return (
     <footer className="bg-slate-900 text-slate-300 pt-14 pb-20 lg:pb-12 border-t-4 border-emerald-700">
@@ -265,41 +265,40 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <MapPin className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                 <span>{settings.address || 'Ntolo, Arrondissement de Nlonako, Moungo, Cameroun'}</span>
               </span>
-              <a href={`tel:${settings.contactPhone?.split('/')[0]?.trim() || '+237670001122'}`} className="flex items-center gap-1.5 hover:text-amber-300 font-mono">
+              <span className="flex items-center gap-1.5 font-mono text-emerald-300 font-semibold">
                 <Phone className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span>{settings.contactPhone}</span>
-              </a>
+                <span>{settings.contactPhone || '(+237) 699 21 77 61 / 694 68 18 40'}</span>
+              </span>
               <a href={`mailto:${settings.contactEmail}`} className="flex items-center gap-1.5 hover:text-amber-300 font-mono">
                 <Mail className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                 <span>{settings.contactEmail}</span>
               </a>
             </div>
 
-            {/* Social Network Links */}
+            {/* Social Network Links & WhatsApp direct lines */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
               <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mr-1">
-                Réseaux :
+                WhatsApp Secrétariat :
               </span>
-              {settings.socialFacebookUrl && (
-                <a
-                  href={settings.socialFacebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-white transition-colors"
-                  title="Facebook officiel"
-                >
-                  <Facebook className="w-3.5 h-3.5" />
-                </a>
-              )}
               <a
-                href={whatsappUrl}
+                href={whatsappUrl1}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-600 text-white transition-colors flex items-center gap-1"
-                title="WhatsApp Secrétariat"
+                className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white transition-colors flex items-center gap-1 font-mono text-[11px] font-bold"
+                title="Écrire au Secrétariat Ligne 1 sur WhatsApp"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-bold hidden sm:inline">WhatsApp</span>
+                <span>Ligne 1 : 699 21 77 61</span>
+              </a>
+              <a
+                href={whatsappUrl2}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white transition-colors flex items-center gap-1 font-mono text-[11px] font-bold"
+                title="Écrire au Secrétariat Ligne 2 sur WhatsApp"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Ligne 2 : 694 68 18 40</span>
               </a>
               {settings.socialYoutubeUrl && (
                 <a

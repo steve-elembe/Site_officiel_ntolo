@@ -1,9 +1,11 @@
 import React from 'react';
-import { MapPin, Mountain, Waves, Compass, Navigation, Car, ShieldAlert } from 'lucide-react';
+import { MapPin, Mountain, Waves, Compass, Navigation, Car, ShieldAlert, Sparkles } from 'lucide-react';
 import { PageId } from '../types';
 import { VILLAGE_INFO, LOCATION_DATA } from '../data/villageData';
 import { InstitutionalPageHeader } from '../components/InstitutionalPageHeader';
 import { OfficialSourcesSection, OfficialSourceItem } from '../components/OfficialSourcesSection';
+import { usePageContent } from '../hooks/usePageContent';
+import { getSiteSettings } from '../services/adminService';
 
 interface GeographieViewProps {
   onNavigate: (page: PageId) => void;
@@ -34,15 +36,26 @@ const SOURCES_GEOGRAPHIE: OfficialSourceItem[] = [
 ];
 
 export const GeographieView: React.FC<GeographieViewProps> = ({ onNavigate }) => {
+  const content = usePageContent('geographie');
+  const settings = getSiteSettings();
+
+  const reliefSection = content.sections.find((s) => s.id === 'relief-climat') || content.sections[0];
+  const hydroSection = content.sections.find((s) => s.id === 'hydrographie-sources') || content.sections[1];
+  const accesSection = content.sections.find((s) => s.id === 'voies-acces') || content.sections[2];
+
+  const customSections = content.sections.filter(
+    (s) => s.id !== 'relief-climat' && s.id !== 'hydrographie-sources' && s.id !== 'voies-acces'
+  );
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       <InstitutionalPageHeader
-        badge="Portail Officiel • Section 03"
-        title="Situation Géographique & Cadre Territorial"
-        description="Localisation spatiale, topographie du Mont Nlonako, limites administratives, hydrographie et voies d'accès au village de Ntolo."
+        badge={content.badge || 'Portail Officiel • Section 03'}
+        title={content.title || 'Situation Géographique & Cadre Territorial'}
+        description={content.description || 'Localisation spatiale, topographie du Mont Nlonako, limites administratives, hydrographie et voies d\'accès au village de Ntolo.'}
         icon={MapPin}
         onNavigateBack={() => onNavigate('accueil')}
-        provisionalNoticeText="Les coordonnées GPS exactes de la Chefferie et les délimitations cadastrales précises avec les terroirs voisins font l'objet d'un bornage technique et sont indiquées par la mention [À compléter]."
+        provisionalNoticeText={content.provisionalNotice || 'Les coordonnées GPS exactes de la Chefferie et les délimitations cadastrales précises avec les terroirs voisins font l\'objet d\'un bornage technique et sont indiquées par la mention [À compléter].'}
       />
 
       {/* 1. Coordonnées et Repères Spatiaux */}
@@ -76,118 +89,122 @@ export const GeographieView: React.FC<GeographieViewProps> = ({ onNavigate }) =>
         </div>
 
         <div className="p-4 rounded-xl bg-stone-100 border border-stone-200 text-xs font-mono text-slate-700 space-y-1">
-          <div><strong>Coordonnées GPS certifiées de la Chefferie :</strong> {LOCATION_DATA.coordinates}</div>
-          <div><strong>Altitude moyenne estimée du village :</strong> [À compléter : ~600 m à 900 m selon les quartiers d’altitude]</div>
-        </div>
-      </section>
-
-      {/* 2. Limites Territoriales & Terroirs Voisins */}
-      <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-5">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 border-b border-stone-100 pb-3">
-          <Navigation className="w-5 h-5 text-emerald-800" />
-          <span>2. Limites Territoriales & Confinements Coutumiers</span>
-        </h2>
-        <p className="text-sm text-slate-700 leading-relaxed">
-          Le finage traditionnel de Ntolo est circonscrit par des repères naturels ancestraux (lignes de crêtes, cours d'eau pérennes, grands arbres remarquables) et par les limites administratives de l'Arrondissement de Nlonako.
-        </p>
-
-        <div className="overflow-x-auto rounded-xl border border-stone-200">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-stone-50 text-slate-700 uppercase tracking-wider text-[10px] font-bold border-b border-stone-200">
-              <tr>
-                <th className="px-4 py-3 w-36">Orientation Cardinale</th>
-                <th className="px-4 py-3">Villages / Entités Limitrophes</th>
-                <th className="px-4 py-3">Repères Naturels de Délimitation</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              <tr className="hover:bg-stone-50/70">
-                <td className="px-4 py-3 font-bold text-slate-900">Nord</td>
-                <td className="px-4 py-3 text-slate-700">[À compléter : Villages ou crêtes au Nord de Ntolo]</td>
-                <td className="px-4 py-3 text-slate-600">Contreforts et ravins du Mont Nlonako [À compléter]</td>
-              </tr>
-              <tr className="hover:bg-stone-50/70">
-                <td className="px-4 py-3 font-bold text-slate-900">Sud</td>
-                <td className="px-4 py-3 text-slate-700">[À compléter : Villages limitrophes vers le Sud]</td>
-                <td className="px-4 py-3 text-slate-600">Ruisseaux et zones de plantations ombragées [À compléter]</td>
-              </tr>
-              <tr className="hover:bg-stone-50/70">
-                <td className="px-4 py-3 font-bold text-slate-900">Est</td>
-                <td className="px-4 py-3 text-slate-700">[À compléter : Limites vers la forêt d'altitude]</td>
-                <td className="px-4 py-3 text-slate-600">Pente forestière et sanctuaires écologiques [À compléter]</td>
-              </tr>
-              <tr className="hover:bg-stone-50/70">
-                <td className="px-4 py-3 font-bold text-slate-900">Ouest</td>
-                <td className="px-4 py-3 text-slate-700">[À compléter : Axe de liaison vers Nlonako centre / Nkongsamba]</td>
-                <td className="px-4 py-3 text-slate-600">Piste de desserte et bassins agricoles [À compléter]</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* 3. Relief, Climat & Hydrographie */}
-      <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 border-b border-stone-100 pb-3">
-          <Mountain className="w-5 h-5 text-emerald-800" />
-          <span>3. Relief, Climat & Réseau Hydrographique</span>
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
-            <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-              <Mountain className="w-4 h-4 text-emerald-800" />
-              Relief & Géologie
-            </h4>
-            <p className="text-slate-600 leading-relaxed">
-              Ntolo se caractérise par une topographie de moyenne montagne, marquée par les épanchements basaltiques de la Ligne volcanique du Cameroun. Les pentes fertiles favorisent le drainage naturel des eaux pluviales.
-            </p>
+          <div>
+            <strong>Coordonnées GPS certifiées de la Chefferie :</strong>{' '}
+            {settings.gpsLatitude && settings.gpsLongitude
+              ? `${settings.gpsLatitude}° N, ${settings.gpsLongitude}° E`
+              : LOCATION_DATA.coordinates}
           </div>
-          <div className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
-            <h4 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
-              <Waves className="w-4 h-4 text-emerald-800" />
-              Hydrographie & Sources
-            </h4>
-            <p className="text-slate-600 leading-relaxed">
-              Le village est arrosé par plusieurs cours d’eau pérennes prenant leur source sur les cimes du Mont Nlonako : [À compléter : Noms vernaculaires des principaux ruisseaux, cascades et cours d'eau qui traversent Ntolo].
-            </p>
+          <div>
+            <strong>Altitude moyenne estimée :</strong> {settings.gpsAltitude || '[À compléter : ~600 m à 900 m selon les quartiers d’altitude]'}
           </div>
         </div>
       </section>
 
-      {/* 4. Voies d'accès et Itinéraires */}
-      <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
-        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 border-b border-stone-100 pb-3">
-          <Car className="w-5 h-5 text-emerald-800" />
-          <span>4. Voies d'Accès & Distances de Référence</span>
-        </h2>
-        <div className="overflow-x-auto rounded-xl border border-stone-200">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-stone-50 text-slate-700 uppercase tracking-wider text-[10px] font-bold border-b border-stone-200">
-              <tr>
-                <th className="px-4 py-3">Point de Départ</th>
-                <th className="px-4 py-3">Itinéraire Emprunté</th>
-                <th className="px-4 py-3">Distance Estimée</th>
-                <th className="px-4 py-3">État de la Voie</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {LOCATION_DATA.accessItinerary.map((it, idx) => (
-                <tr key={idx} className="hover:bg-stone-50/70">
-                  <td className="px-4 py-3 font-bold text-slate-900">{it.from}</td>
-                  <td className="px-4 py-3 text-slate-700">{it.detail}</td>
-                  <td className="px-4 py-3 font-semibold text-amber-900">{it.distance}</td>
-                  <td className="px-4 py-3 text-slate-500">Bitume jusqu'à l'axe Nlonako, puis piste rurale [À préciser]</td>
-                </tr>
+      {/* 2. Relief, Climat & Hydrographie */}
+      {reliefSection && (
+        <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+          <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Mountain className="w-5 h-5 text-emerald-800" />
+              <span>{reliefSection.title}</span>
+            </h2>
+            {reliefSection.subtitle && (
+              <span className="text-xs text-stone-500">{reliefSection.subtitle}</span>
+            )}
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{reliefSection.content}</p>
+          {reliefSection.bullets && reliefSection.bullets.length > 0 && (
+            <ul className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5 text-xs text-slate-700 list-disc list-inside">
+              {reliefSection.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            </ul>
+          )}
+        </section>
+      )}
 
-      {/* Sources & Documents Officiels */}
+      {/* 3. Hydrographie & Richesse des Eaux */}
+      {hydroSection && (
+        <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+          <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Waves className="w-5 h-5 text-emerald-800" />
+              <span>{hydroSection.title}</span>
+            </h2>
+            {hydroSection.subtitle && (
+              <span className="text-xs text-stone-500">{hydroSection.subtitle}</span>
+            )}
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{hydroSection.content}</p>
+          {hydroSection.bullets && hydroSection.bullets.length > 0 && (
+            <ul className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 space-y-1.5 text-xs text-emerald-950 list-disc list-inside">
+              {hydroSection.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {/* 4. Voies d'Accès & Desserte */}
+      {accesSection && (
+        <section className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+          <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Car className="w-5 h-5 text-emerald-800" />
+              <span>{accesSection.title}</span>
+            </h2>
+            {accesSection.subtitle && (
+              <span className="text-xs text-stone-500">{accesSection.subtitle}</span>
+            )}
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{accesSection.content}</p>
+          {accesSection.bullets && accesSection.bullets.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+              {accesSection.bullets.map((b, i) => (
+                <div key={i} className="p-3 rounded-xl bg-stone-50 border border-stone-200 space-y-1">
+                  <span className="font-bold text-slate-800 block">Itinéraire {i + 1}</span>
+                  <span className="text-slate-600 block">{b}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Sections personnalisées ajoutées par l'administration */}
+      {customSections.map((sec) => (
+        <section key={sec.id} className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+          <div className="border-b border-stone-100 pb-3 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              <span>{sec.title}</span>
+            </h2>
+            {sec.isProvisional && (
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                À compléter
+              </span>
+            )}
+          </div>
+          {sec.subtitle && (
+            <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">{sec.subtitle}</p>
+          )}
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{sec.content}</p>
+          {sec.bullets && sec.bullets.length > 0 && (
+            <ul className="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5 text-xs text-slate-700 list-disc list-inside">
+              {sec.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
+
+      {/* Section Sources & Documents Officiels */}
       <OfficialSourcesSection
         sources={SOURCES_GEOGRAPHIE}
-        themeTitle="la géographie, la topographie et l'accès à Ntolo"
+        themeTitle="la géographie, le relief et les voies d'accès de Ntolo"
         onNavigateToContact={() => onNavigate('contact')}
       />
     </div>

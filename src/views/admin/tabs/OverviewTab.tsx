@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Newspaper, Megaphone, Calendar, FileCode, Image, Video,
   FileText, Target, Mail, Users, ArrowUpRight, CheckCircle2,
-  Clock, AlertCircle, Eye, ShieldCheck, Plus, Sparkles
+  Clock, AlertCircle, Eye, ShieldCheck, Plus, Sparkles, HelpCircle
 } from 'lucide-react';
 import { AdminTab } from '../AdminSidebar';
 import { UserRole, AdminActivityLog } from '../../../types';
@@ -58,6 +58,33 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </button>
         </div>
       )}
+
+      {/* Team Quota & Help Callout Banner */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-stone-900 to-stone-950 border border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-lg">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+            <HelpCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-white text-sm">Guide d'Aide à la Gestion du Portail</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-900 text-emerald-300 text-[10px] font-bold border border-emerald-700/50">
+                {stats.usersCount} / 5 Administrateurs
+              </span>
+            </div>
+            <p className="text-stone-300 text-xs mt-0.5">
+              Consultez le guide officiel pour savoir comment ajouter/modifier du contenu, gérer les photos et inviter de nouveaux administrateurs.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onSelectTab('aide')}
+          className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 flex-shrink-0 shadow-sm"
+        >
+          <span>Consulter le Guide d'Aide</span>
+          <ArrowUpRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {/* Main KPI Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

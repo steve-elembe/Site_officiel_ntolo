@@ -49,8 +49,14 @@ import { CommunityActionHubModal } from './components/community/CommunityActionH
 import { FloatingWhatsAppButton } from './components/common/FloatingWhatsAppButton';
 import { PartnerAdBanner } from './components/common/PartnerAdBanner';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { InContextAdminBar } from './components/admin/InContextAdminBar';
+import { PageContentEditorModal } from './components/admin/PageContentEditorModal';
 import { getCurrentAdminUser, logoutAdmin, EVENT_ADMIN_AUTH_CHANGED } from './services/authService';
-import { getSiteSettings, EVENT_ADMIN_DATA_CHANGED } from './services/adminService';
+import { getSiteSettings, EVENT_ADMIN_DATA_CHANGED, subscribeSiteSettings, subscribeEvents } from './services/adminService';
+import { subscribePublications } from './services/publicationService';
+import { subscribeMedia } from './services/galleryService';
+import { db } from './services/firebase';
+import { onSnapshot, doc, collection } from 'firebase/firestore';
 import { updatePageSeo, syncCleanUrl, getPageIdFromPath } from './services/seoService';
 import { AdminUser, SiteSettings, CommunityFormType } from './types';
 import { Megaphone, X, ArrowRight } from 'lucide-react';
@@ -71,6 +77,7 @@ export default function App() {
   const [currentAdminUser, setCurrentAdminUser] = useState<Omit<AdminUser, 'passwordHash'> | null>(null);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(getSiteSettings());
   const [dismissEmergencyBanner, setDismissEmergencyBanner] = useState(false);
+  const [isPageEditorOpen, setIsPageEditorOpen] = useState(false);
 
   // Global Community Action Hub Modal state
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
@@ -120,7 +127,37 @@ export default function App() {
     window.addEventListener(EVENT_ADMIN_DATA_CHANGED, handleDataChange);
     window.addEventListener('ntolo_open_community_modal', handleOpenCommunityModal);
 
+    // =========================================================================
+    // LISTENERS FIRESTORE EN TEMPS RÉEL (onSnapshot) POUR PROPAGATION IMMÉDIATE
+    // =========================================================================
+
+    // 1. Listener Firestore pour les paramètres du site (Bannière d'alerte, WhatsApp, Coordonnées)
+    const unsubSettings = subscribeSiteSettings((newSettings) => {
+      setSiteSettings(newSettings);
+    });
+
+    // 2. Listener Firestore pour les publications & actualités
+    const unsubPubs = subscribePublications(() => {
+      // Notifie les vues publiques d'une mise à jour
+      window.dispatchEvent(new Event('ntolo_publications_updated'));
+    });
+
+    // 3. Listener Firestore pour l'agenda & événements
+    const unsubEvents = subscribeEvents(() => {
+      window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+    });
+
+    // 4. Listener Firestore pour la médiathèque photo/vidéo
+    const unsubMedia = subscribeMedia(() => {
+      window.dispatchEvent(new Event('ntolo_gallery_updated'));
+    });
+
+    // Nettoyage complet des abonnements lors du démontage
     return () => {
+      unsubSettings();
+      unsubPubs();
+      unsubEvents();
+      unsubMedia();
       window.removeEventListener(EVENT_ADMIN_AUTH_CHANGED, handleAuthChange);
       window.removeEventListener(EVENT_ADMIN_DATA_CHANGED, handleDataChange);
       window.removeEventListener('ntolo_open_community_modal', handleOpenCommunityModal);
@@ -185,6 +222,17 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className={`min-h-screen flex flex-col bg-slate-50 text-slate-800 ${getFontSizeClass()}`}>
+        {/* In-Context Admin Quick-Edit Bar for logged-in administrators */}
+        {currentAdminUser && (
+          <InContextAdminBar
+            currentUser={currentAdminUser}
+            currentPage={currentPage}
+            onOpenPageEditor={() => setIsPageEditorOpen(true)}
+            onNavigateToAdmin={() => handleNavigate('admin')}
+            onLogout={handleAdminLogout}
+          />
+        )}
+
         {/* Official Emergency Banner configured from Admin */}
         {siteSettings.emergencyBannerActive && !dismissEmergencyBanner && (
           <div className="bg-amber-600 text-stone-950 px-4 py-2.5 shadow-md flex items-center justify-between text-xs sm:text-sm font-semibold border-b border-amber-700">
@@ -326,6 +374,21 @@ export default function App() {
 
       {/* Floating Configurable WhatsApp Direct Action */}
       <FloatingWhatsAppButton />
+
+      {/* In-Context Dynamic Page Content Editor Modal */}
+      {currentAdminUser && (
+        <PageContentEditorModal
+          isOpen={isPageEditorOpen}
+          onClose={() => setIsPageEditorOpen(false)}
+          pageId={currentPage}
+          currentUserName={currentAdminUser.fullName}
+          currentUserRole={currentAdminUser.role}
+          onNavigateToAdmin={() => {
+            setIsPageEditorOpen(false);
+            handleNavigate('admin');
+          }}
+        />
+      )}
     </div>
     </ErrorBoundary>
   );

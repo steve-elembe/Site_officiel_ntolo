@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Download, Eye, ShieldCheck, CheckCircle2, Search, Filter } from 'lucide-react';
 import { PageId, DocumentItem } from '../types';
 import { SAMPLE_DOCUMENTS } from '../data/villageData';
+import { getStoredDocuments, subscribeDocuments } from '../services/adminService';
 
 interface DocumentsViewProps {
   onNavigate: (page: PageId) => void;
@@ -11,12 +12,24 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ onNavigate }) => {
   const [downloadSuccessDoc, setDownloadSuccessDoc] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('Tous');
+  const [documents, setDocuments] = useState<DocumentItem[]>(() => getStoredDocuments());
+
+  // Listener Firestore en temps réel (onSnapshot) pour répercuter instantanément les ajouts/modifications
+  useEffect(() => {
+    const unsub = subscribeDocuments((freshDocs) => {
+      setDocuments(freshDocs);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   const categories = ['Tous', 'Statuts', 'Administration', 'Fiches Projets', 'Formulaires'];
 
+  const publishedDocs = documents.filter((d) => d.published !== false);
   const filteredDocs = filterCategory === 'Tous'
-    ? SAMPLE_DOCUMENTS
-    : SAMPLE_DOCUMENTS.filter((d) => d.category === filterCategory);
+    ? publishedDocs
+    : publishedDocs.filter((d) => d.category === filterCategory);
 
   const handleDownload = (doc: DocumentItem) => {
     setDownloadSuccessDoc(doc.title);

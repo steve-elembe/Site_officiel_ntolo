@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { PageId, EventItem } from '../types';
 import { SAMPLE_EVENTS } from '../data/villageData';
-import { getStoredPublications } from '../services/publicationService';
+import { getStoredPublications, subscribePublications } from '../services/publicationService';
+import { getStoredEvents, subscribeEvents } from '../services/adminService';
 import { AdminPublicationModal } from '../components/AdminPublicationModal';
 
 interface EvenementsViewProps {
@@ -27,8 +28,24 @@ export const EvenementsView: React.FC<EvenementsViewProps> = ({
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
 
-  // Combine static events + events from publication service
-  const publications = getStoredPublications();
+  // Combine live events from Firestore + events from publication service
+  const [publications, setPublications] = useState(getStoredPublications());
+  const [storedEvents, setStoredEvents] = useState(getStoredEvents());
+
+  useEffect(() => {
+    const unsubEvents = subscribeEvents((freshEvents) => {
+      setStoredEvents(freshEvents);
+    });
+    const unsubPubs = subscribePublications((freshPubs) => {
+      setPublications(freshPubs);
+    });
+
+    return () => {
+      unsubEvents();
+      unsubPubs();
+    };
+  }, []);
+
   const pubEvents = useMemo(() => {
     return publications
       .filter((p) => p.published && p.category === 'Événements')
@@ -45,8 +62,9 @@ export const EvenementsView: React.FC<EvenementsViewProps> = ({
   }, [publications]);
 
   const allEvents = useMemo(() => {
-    return [...pubEvents, ...SAMPLE_EVENTS];
-  }, [pubEvents]);
+    const validStored = storedEvents.filter((e) => e.published !== false);
+    return [...pubEvents, ...validStored];
+  }, [pubEvents, storedEvents]);
 
   const categories = ['Tous', 'Réunion', 'Travaux Communautaires', 'Culture', 'Sport & Jeunesse'];
 

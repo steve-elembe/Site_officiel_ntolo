@@ -722,6 +722,30 @@ export const CommunityActionHubModal: React.FC<CommunityActionHubModalProps> = (
                       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-900 focus:ring-1 focus:ring-emerald-700"
                     />
                   </div>
+
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      💬 <strong>Échange direct sur WhatsApp :</strong> Vous pouvez également joindre le Secrétariat aux numéros <strong>699 21 77 61</strong> ou <strong>694 68 18 40</strong>.
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <a
+                        href="https://api.whatsapp.com/send?phone=237699217761"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px]"
+                      >
+                        Ligne 1 (699217761)
+                      </a>
+                      <a
+                        href="https://api.whatsapp.com/send?phone=237694681840"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px]"
+                      >
+                        Ligne 2 (694681840)
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
 

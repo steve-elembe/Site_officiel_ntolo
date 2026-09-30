@@ -8,6 +8,7 @@ import { PageId, PublicationItem, ArticleCategory } from '../types';
 import {
   ARTICLE_CATEGORIES,
   getStoredPublications,
+  subscribePublications,
 } from '../services/publicationService';
 import { AdminPublicationModal } from '../components/AdminPublicationModal';
 
@@ -34,10 +35,20 @@ export const ActualitesView: React.FC<ActualitesViewProps> = ({
 
   useEffect(() => {
     loadPublications();
+
+    // Listener Firestore en temps réel (onSnapshot)
+    const unsubFirestore = subscribePublications((freshPubs) => {
+      setPublications(freshPubs);
+    });
+
     // Listen for storage update events
     const handleStorageUpdate = () => loadPublications();
     window.addEventListener('ntolo_publications_updated', handleStorageUpdate);
-    return () => window.removeEventListener('ntolo_publications_updated', handleStorageUpdate);
+
+    return () => {
+      unsubFirestore();
+      window.removeEventListener('ntolo_publications_updated', handleStorageUpdate);
+    };
   }, []);
 
   // Filter and sort publications

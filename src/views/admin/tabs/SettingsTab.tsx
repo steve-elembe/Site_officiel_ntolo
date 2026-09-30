@@ -174,26 +174,41 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-stone-300">Téléphones officiels (Chefferie & CODEV)</label>
+              <label className="font-bold text-stone-300">Téléphones officiels (Chefferie & Secrétariat)</label>
               <input
                 type="text"
                 disabled={!canEdit}
                 value={formData.contactPhone}
                 onChange={(e) => handleChange('contactPhone', e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-800 text-white focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+                placeholder="(+237) 699 21 77 61 / 694 68 18 40"
+                className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-800 text-white focus:ring-1 focus:ring-amber-500 disabled:opacity-50 font-mono"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-stone-300">Numéro WhatsApp du Secrétariat (avec indicatif)</label>
+              <label className="font-bold text-stone-300">Numéro WhatsApp Ligne 1 (Principal)</label>
               <input
                 type="text"
                 disabled={!canEdit}
                 value={formData.whatsappNumber || ''}
                 onChange={(e) => handleChange('whatsappNumber', e.target.value)}
-                placeholder="+237670001122"
-                className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-800 text-white focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+                placeholder="+237699217761"
+                className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-800 text-white focus:ring-1 focus:ring-amber-500 disabled:opacity-50 font-mono"
               />
+              <span className="text-[10px] text-stone-400">Numéro direct 1 : 699217761</span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold text-stone-300">Numéro WhatsApp Ligne 2 (Secondaire)</label>
+              <input
+                type="text"
+                disabled={!canEdit}
+                value={formData.whatsappNumberSecondary || ''}
+                onChange={(e) => handleChange('whatsappNumberSecondary', e.target.value)}
+                placeholder="+237694681840"
+                className="w-full px-3 py-2 rounded-xl bg-stone-950 border border-stone-800 text-white focus:ring-1 focus:ring-amber-500 disabled:opacity-50 font-mono"
+              />
+              <span className="text-[10px] text-stone-400">Numéro direct 2 : 694681840</span>
             </div>
 
             <div className="space-y-1">

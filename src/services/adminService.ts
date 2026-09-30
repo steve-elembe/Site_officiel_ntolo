@@ -11,6 +11,8 @@ import {
   PublicationItem,
 } from '../types';
 import { SAMPLE_EVENTS, SAMPLE_PROJECTS, SAMPLE_DOCUMENTS, PAGES_META } from '../data/villageData';
+import { db } from './firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import {
   getStoredPublications,
   saveStoredPublications,
@@ -46,8 +48,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   chiefTitle: 'Chef Traditionnel de 3e Degré',
   chiefName: 'Sa Majesté le Chef de Ntolo & le Conseil des Sages',
   contactEmail: 'contact@ntolo-village.cm',
-  contactPhone: '(+237) 670 00 11 22 / 690 12 34 56',
-  whatsappNumber: '+237670001122',
+  contactPhone: '(+237) 699 21 77 61 / 694 68 18 40',
+  whatsappNumber: '+237699217761',
+  whatsappNumberSecondary: '+237694681840',
   whatsappMessagePreset: 'Bonjour le Secrétariat du Village de Ntolo, je vous contacte via le portail numérique officiel pour :',
   secretariatHours: 'Lundi au Vendredi : 08h00 - 15h30 | Samedi : 09h00 - 12h00',
   locationSummary: 'Arrondissement de Nlonako, Département du Moungo, Région du Littoral, Cameroun',
@@ -77,8 +80,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   // Passerelle de paiement futur
   onlinePaymentEnabled: true,
   onlinePaymentSandboxMode: true,
-  onlinePaymentOrangeMoneyNumber: '+237 690 12 34 56',
-  onlinePaymentMtnMoMoNumber: '+237 670 00 11 22',
+  onlinePaymentOrangeMoneyNumber: '+237 699 21 77 61',
+  onlinePaymentMtnMoMoNumber: '+237 694 68 18 40',
   onlinePaymentCampayAppKey: 'campay_sandbox_ntolo_key_mock_2026',
   onlinePaymentFlutterwavePublicKey: 'FLWPUBK_TEST_ntolo_mock_2026',
 
@@ -94,6 +97,17 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   legalCookiePolicyText: 'Ce portail officiel pratique une politique de sobriété numérique : aucun cookie publicitaire ou traceur commercial tiers n’est déposé sur votre terminal. Seules les données locales de session strictement nécessaires à la navigation et à la sécurité de l’administration sont utilisées.',
 };
 
+/**
+ * Helper to construct an exact WhatsApp URL for Cameroon numbers (+237)
+ */
+export function formatWhatsAppUrl(phoneNumber: string, messagePreset: string = ''): string {
+  const digits = (phoneNumber || '').replace(/[^0-9]/g, '');
+  // If Cameroon standard 9-digit format (e.g. 699217761 or 694681840)
+  const fullIntlDigits = digits.startsWith('237') ? digits : `237${digits}`;
+  const encodedMsg = encodeURIComponent(messagePreset || '');
+  return `https://api.whatsapp.com/send?phone=${fullIntlDigits}&text=${encodedMsg}`;
+}
+
 export function getSiteSettings(): SiteSettings {
   if (typeof window === 'undefined') return DEFAULT_SETTINGS;
   try {
@@ -102,7 +116,40 @@ export function getSiteSettings(): SiteSettings {
       localStorage.setItem(KEY_SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
       return DEFAULT_SETTINGS;
     }
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    let changed = false;
+
+    // Auto-migrate legacy / mock phone numbers to requested secretariat numbers
+    if (
+      !parsed.whatsappNumber ||
+      parsed.whatsappNumber.includes('670001122') ||
+      parsed.whatsappNumber.includes('6XX')
+    ) {
+      parsed.whatsappNumber = '+237699217761';
+      changed = true;
+    }
+    if (
+      !parsed.whatsappNumberSecondary ||
+      parsed.whatsappNumberSecondary.includes('670001122') ||
+      parsed.whatsappNumberSecondary.includes('690123456')
+    ) {
+      parsed.whatsappNumberSecondary = '+237694681840';
+      changed = true;
+    }
+    if (
+      !parsed.contactPhone ||
+      parsed.contactPhone.includes('670 00 11 22') ||
+      parsed.contactPhone.includes('6XX')
+    ) {
+      parsed.contactPhone = '(+237) 699 21 77 61 / 694 68 18 40';
+      changed = true;
+    }
+
+    const merged = { ...DEFAULT_SETTINGS, ...parsed };
+    if (changed) {
+      localStorage.setItem(KEY_SETTINGS, JSON.stringify(merged));
+    }
+    return merged;
   } catch (e) {
     return DEFAULT_SETTINGS;
   }
@@ -111,7 +158,45 @@ export function getSiteSettings(): SiteSettings {
 export function saveSiteSettings(settings: SiteSettings): SiteSettings {
   localStorage.setItem(KEY_SETTINGS, JSON.stringify(settings));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Sync to Firestore in real time for all online visitors
+  try {
+    setDoc(doc(db, 'village_settings', 'general'), settings).catch((err) => {
+      console.warn('Firestore setDoc village_settings error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return settings;
+}
+
+/**
+ * Real-time listener for site settings from Firestore
+ */
+export function subscribeSiteSettings(callback: (settings: SiteSettings) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const unsub = onSnapshot(doc(db, 'village_settings', 'general'), (docSnap) => {
+      if (docSnap.exists()) {
+        const firestoreData = docSnap.data() as SiteSettings;
+        const current = getSiteSettings();
+        const merged = { ...current, ...firestoreData };
+        localStorage.setItem(KEY_SETTINGS, JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+        callback(merged);
+      } else {
+        callback(getSiteSettings());
+      }
+    }, (err) => {
+      console.warn('Firestore subscribeSiteSettings error:', err);
+      callback(getSiteSettings());
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribeSiteSettings failed:', e);
+    return () => {};
+  }
 }
 
 // =========================================================================
@@ -147,6 +232,16 @@ export function saveEvent(event: EventItem & { published: boolean; attendeesCoun
   }
   localStorage.setItem(KEY_EVENTS, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Sync to Firestore in real time
+  try {
+    setDoc(doc(db, 'village_events', event.id), event).catch((err) => {
+      console.warn('Firestore setDoc village_events error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return updated;
 }
 
@@ -155,6 +250,16 @@ export function deleteEvent(id: string) {
   const updated = current.filter((e) => e.id !== id);
   localStorage.setItem(KEY_EVENTS, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Delete from Firestore
+  try {
+    deleteDoc(doc(db, 'village_events', id)).catch((err) => {
+      console.warn('Firestore deleteDoc village_events error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return updated;
 }
 
@@ -165,6 +270,47 @@ export function toggleEventPublished(id: string) {
     item.published = !item.published;
     localStorage.setItem(KEY_EVENTS, JSON.stringify(current));
     window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+    // Update in Firestore
+    try {
+      setDoc(doc(db, 'village_events', id), item).catch((err) => {
+        console.warn('Firestore toggleEventPublished error:', err);
+      });
+    } catch (e) {
+      console.warn('Firestore offline:', e);
+    }
+  }
+}
+
+/**
+ * Real-time listener for events from Firestore
+ */
+export function subscribeEvents(
+  callback: (events: (EventItem & { published: boolean; attendeesCount?: number })[]) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const colRef = collection(db, 'village_events');
+    const unsub = onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreEvents: (EventItem & { published: boolean; attendeesCount?: number })[] = [];
+        snapshot.forEach((docSnap) => {
+          firestoreEvents.push(docSnap.data() as EventItem & { published: boolean; attendeesCount?: number });
+        });
+        localStorage.setItem(KEY_EVENTS, JSON.stringify(firestoreEvents));
+        window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+        callback(firestoreEvents);
+      } else {
+        callback(getStoredEvents());
+      }
+    }, (err) => {
+      console.warn('Firestore subscribeEvents error:', err);
+      callback(getStoredEvents());
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribeEvents failed:', e);
+    return () => {};
   }
 }
 
@@ -254,18 +400,28 @@ export function getStoredDocuments(): DocumentItem[] {
   }
 }
 
-export function saveDocument(doc: DocumentItem) {
+export function saveDocument(docItem: DocumentItem) {
   const current = getStoredDocuments();
-  const index = current.findIndex((d) => d.id === doc.id);
+  const index = current.findIndex((d) => d.id === docItem.id);
   let updated;
   if (index >= 0) {
     updated = [...current];
-    updated[index] = doc;
+    updated[index] = docItem;
   } else {
-    updated = [doc, ...current];
+    updated = [docItem, ...current];
   }
   localStorage.setItem(KEY_DOCUMENTS, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Sync to Firestore in real time
+  try {
+    setDoc(doc(db, 'village_documents', docItem.id), docItem).catch((err) => {
+      console.warn('Firestore setDoc village_documents error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return updated;
 }
 
@@ -274,16 +430,64 @@ export function deleteDocument(id: string) {
   const updated = current.filter((d) => d.id !== id);
   localStorage.setItem(KEY_DOCUMENTS, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Delete from Firestore
+  try {
+    deleteDoc(doc(db, 'village_documents', id)).catch((err) => {
+      console.warn('Firestore deleteDoc village_documents error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return updated;
 }
 
 export function toggleDocumentPublished(id: string) {
   const current = getStoredDocuments();
-  const doc = current.find((d) => d.id === id);
-  if (doc) {
-    doc.published = doc.published === undefined ? false : !doc.published;
+  const docItem = current.find((d) => d.id === id);
+  if (docItem) {
+    docItem.published = docItem.published === undefined ? false : !docItem.published;
     localStorage.setItem(KEY_DOCUMENTS, JSON.stringify(current));
     window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+    try {
+      setDoc(doc(db, 'village_documents', id), docItem).catch((err) => {
+        console.warn('Firestore toggleDocumentPublished error:', err);
+      });
+    } catch (e) {
+      console.warn('Firestore offline:', e);
+    }
+  }
+}
+
+/**
+ * Real-time listener for official documents from Firestore
+ */
+export function subscribeDocuments(callback: (docs: DocumentItem[]) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const colRef = collection(db, 'village_documents');
+    const unsub = onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreDocs: DocumentItem[] = [];
+        snapshot.forEach((docSnap) => {
+          firestoreDocs.push(docSnap.data() as DocumentItem);
+        });
+        localStorage.setItem(KEY_DOCUMENTS, JSON.stringify(firestoreDocs));
+        window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+        callback(firestoreDocs);
+      } else {
+        callback(getStoredDocuments());
+      }
+    }, (err) => {
+      console.warn('Firestore subscribeDocuments error:', err);
+      callback(getStoredDocuments());
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribeDocuments failed:', e);
+    return () => {};
   }
 }
 
@@ -320,6 +524,16 @@ export function saveProject(project: ProjectItem & { published?: boolean }) {
   }
   localStorage.setItem(KEY_PROJECTS, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Sync to Firestore
+  try {
+    setDoc(doc(db, 'village_projects', project.id), project).catch((err) => {
+      console.warn('Firestore setDoc village_projects error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return updated;
 }
 
@@ -328,6 +542,16 @@ export function deleteProject(id: string) {
   const updated = current.filter((p) => p.id !== id);
   localStorage.setItem(KEY_PROJECTS, JSON.stringify(updated));
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+  // Delete from Firestore
+  try {
+    deleteDoc(doc(db, 'village_projects', id)).catch((err) => {
+      console.warn('Firestore deleteDoc village_projects error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
+
   return updated;
 }
 
@@ -338,6 +562,46 @@ export function toggleProjectPublished(id: string) {
     proj.published = proj.published === undefined ? false : !proj.published;
     localStorage.setItem(KEY_PROJECTS, JSON.stringify(current));
     window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+
+    try {
+      setDoc(doc(db, 'village_projects', id), proj).catch((err) => {
+        console.warn('Firestore toggleProjectPublished error:', err);
+      });
+    } catch (e) {
+      console.warn('Firestore offline:', e);
+    }
+  }
+}
+
+/**
+ * Real-time listener for projects from Firestore
+ */
+export function subscribeProjects(
+  callback: (projects: (ProjectItem & { published?: boolean })[]) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const colRef = collection(db, 'village_projects');
+    const unsub = onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreProjects: (ProjectItem & { published?: boolean })[] = [];
+        snapshot.forEach((docSnap) => {
+          firestoreProjects.push(docSnap.data() as ProjectItem & { published?: boolean });
+        });
+        localStorage.setItem(KEY_PROJECTS, JSON.stringify(firestoreProjects));
+        window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
+        callback(firestoreProjects);
+      } else {
+        callback(getStoredProjects());
+      }
+    }, (err) => {
+      console.warn('Firestore subscribeProjects error:', err);
+      callback(getStoredProjects());
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribeProjects failed:', e);
+    return () => {};
   }
 }
 
@@ -493,6 +757,11 @@ export function logAdminActivity(
   window.dispatchEvent(new CustomEvent(EVENT_ADMIN_DATA_CHANGED));
 }
 
+import {
+  getAllPagesContent,
+  importAllPagesContent,
+} from './pageContentService';
+
 // =========================================================================
 // 8. SAUVEGARDE ET RESTAURATION COMPLÈTE DU SYSTÈME
 // =========================================================================
@@ -505,6 +774,7 @@ export function exportFullDatabaseBackup(): string {
     publications: getStoredPublications(),
     events: getStoredEvents(),
     pages: getStoredPages(),
+    pageContents: getAllPagesContent(),
     media: getStoredMedia(),
     documents: getStoredDocuments(),
     projects: getStoredProjects(),
@@ -521,6 +791,7 @@ export function importFullDatabaseBackup(jsonString: string): boolean {
     if (data.publications) saveStoredPublications(data.publications);
     if (data.events) localStorage.setItem(KEY_EVENTS, JSON.stringify(data.events));
     if (data.pages) localStorage.setItem(KEY_PAGES, JSON.stringify(data.pages));
+    if (data.pageContents) importAllPagesContent(data.pageContents);
     if (data.documents) localStorage.setItem(KEY_DOCUMENTS, JSON.stringify(data.documents));
     if (data.projects) localStorage.setItem(KEY_PROJECTS, JSON.stringify(data.projects));
     if (data.contacts) localStorage.setItem(KEY_CONTACTS, JSON.stringify(data.contacts));

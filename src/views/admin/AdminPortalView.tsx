@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AdminUser, PageId, PublicationItem, EventItem, DocumentItem, ProjectItem, ContactMessage, ManagedPage, MultimediaItem, SiteSettings, AdminActivityLog } from '../../types';
+import { AdminUser, UserRole, PageId, PublicationItem, EventItem, DocumentItem, ProjectItem, ContactMessage, ManagedPage, MultimediaItem, SiteSettings, AdminActivityLog } from '../../types';
 import { AdminSidebar, AdminTab } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
 import { OverviewTab } from './tabs/OverviewTab';
@@ -13,6 +13,7 @@ import { ContactsTab } from './tabs/ContactsTab';
 import { CommunitySubmissionsTab } from './tabs/CommunitySubmissionsTab';
 import { UsersTab } from './tabs/UsersTab';
 import { SettingsTab } from './tabs/SettingsTab';
+import { HelpTab } from './tabs/HelpTab';
 import {
   getStoredEvents, saveEvent, deleteEvent, toggleEventPublished,
   getStoredPages, saveManagedPage, togglePageVisibility,
@@ -225,6 +226,16 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
     setRefreshKey((k) => k + 1);
   };
 
+  const handleRevokeUser = (id: string, revoked: boolean, name: string) => {
+    logAdminActivity(currentUser.fullName, currentUser.role, 'edit', 'utilisateur', `${revoked ? 'Révocation' : 'Réactivation'} accès de ${name}`);
+    setRefreshKey((k) => k + 1);
+  };
+
+  const handleUpdateUserRole = (id: string, newRole: UserRole, name: string) => {
+    logAdminActivity(currentUser.fullName, currentUser.role, 'edit', 'utilisateur', `Modification rôle de ${name} vers ${newRole}`);
+    setRefreshKey((k) => k + 1);
+  };
+
   const handleSaveSettings = (st: SiteSettings) => {
     saveSiteSettings(st);
     logAdminActivity(currentUser.fullName, currentUser.role, 'settings', 'parametre', 'Paramètres généraux du site');
@@ -256,9 +267,13 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
       case 'communautaire':
         return { title: 'Contributions Citoyennes & 7 Formulaires', subtitle: 'Gestion des propositions d’actualités, alertes besoins, projets participatifs, promesses de dons et partenariats' };
       case 'utilisateurs':
-        return { title: 'Utilisateurs & Permissions', subtitle: 'Gestion des comptes sous chiffrement SHA-256 avec salage' };
+        return { title: 'Gestion des Comptes & Droits d’Accès', subtitle: 'Ajout, révocation et modification des rôles des 5 administrateurs avec validation Firebase Auth' };
       case 'parametres':
         return { title: 'Paramètres du Portail', subtitle: 'Identité officielle, bannière d’alerte et sauvegardes' };
+      case 'aide':
+        return { title: 'Aide à la Gestion & Guide Officiel', subtitle: 'Guide de référence pour les 5 administrateurs : contenu, photos et invitations' };
+      default:
+        return { title: 'Administration de Ntolo', subtitle: 'Portail Institutionnel Officiel' };
     }
   };
 
@@ -312,6 +327,15 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
             />
           )}
 
+          {currentTab === 'aide' && (
+            <HelpTab
+              currentUser={currentUser}
+              usersCount={users.length}
+              onSelectTab={setCurrentTab}
+              onNavigateToPublic={() => onNavigateToPublic()}
+            />
+          )}
+
           {currentTab === 'actualites' && (
             <PublicationsTab
               type="actualites"
@@ -353,6 +377,7 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
               onToggleVisibility={handleTogglePageVisibility}
               onPreviewPage={(pId) => onNavigateToPublic(pId)}
               userRole={currentUser.role}
+              currentUserName={currentUser.fullName}
             />
           )}
 
@@ -419,6 +444,8 @@ export const AdminPortalView: React.FC<AdminPortalViewProps> = ({
               users={users}
               onSaveUser={handleSaveUser}
               onDeleteUser={handleDeleteUser}
+              onRevokeUser={handleRevokeUser}
+              onUpdateRole={handleUpdateUserRole}
               currentUserId={currentUser.id}
             />
           )}

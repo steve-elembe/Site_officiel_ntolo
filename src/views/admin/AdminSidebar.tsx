@@ -2,7 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard, Newspaper, Megaphone, Calendar, FileCode,
   Image, Video, FileText, Target, Mail, Users, Settings,
-  LogOut, ExternalLink, ShieldCheck, ChevronRight, HeartHandshake
+  LogOut, ExternalLink, ShieldCheck, ChevronRight, HeartHandshake, HelpCircle
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -19,7 +19,8 @@ export type AdminTab =
   | 'contacts'
   | 'communautaire'
   | 'utilisateurs'
-  | 'parametres';
+  | 'parametres'
+  | 'aide';
 
 interface AdminSidebarProps {
   currentTab: AdminTab;
@@ -52,6 +53,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     category: string;
   }[] = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, category: 'Général' },
+    { id: 'aide', label: 'Aide à la Gestion', icon: HelpCircle, category: 'Général' },
     { id: 'actualites', label: 'Actualités', icon: Newspaper, category: 'Publications' },
     { id: 'annonces', label: 'Annonces & Avis', icon: Megaphone, category: 'Publications' },
     { id: 'evenements', label: 'Événements & Agenda', icon: Calendar, category: 'Publications' },
@@ -62,7 +64,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'projets', label: 'Projets de développement', icon: Target, category: 'Ressources' },
     { id: 'communautaire', label: 'Contributions Citoyennes', icon: HeartHandshake, badge: pendingSubmissionsCount, category: 'Interaction' },
     { id: 'contacts', label: 'Contacts reçus', icon: Mail, badge: unreadContactsCount, category: 'Interaction' },
-    { id: 'utilisateurs', label: 'Utilisateurs & Rôles', icon: Users, locked: !isSuperAdmin, category: 'Administration' },
+    { id: 'utilisateurs', label: 'Gestion des comptes', icon: Users, locked: !isSuperAdmin, category: 'Administration' },
     { id: 'parametres', label: 'Paramètres du site', icon: Settings, locked: !isSuperAdmin && !isEditor, category: 'Administration' },
   ];
 

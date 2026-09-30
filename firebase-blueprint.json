@@ -1,0 +1,145 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Représente l'un des 5 administrateurs autorisés à modifier le portail de Ntolo",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "username": { "type": "string" },
+        "role": { "type": "string", "enum": ["administrateur_principal", "editeur", "gestionnaire_contenu"] },
+        "passwordHash": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "lastLogin": { "type": "string" },
+        "addedBy": { "type": "string" },
+        "isSuperAdmin": { "type": "boolean" }
+      },
+      "required": ["id", "fullName", "email", "username", "role", "passwordHash", "active", "createdAt"]
+    },
+    "PageContent": {
+      "title": "PageContent",
+      "description": "Contenu dynamique et sections modifiables d'une page du village",
+      "type": "object",
+      "properties": {
+        "pageId": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "badge": { "type": "string" },
+        "provisionalNotice": { "type": "string" },
+        "sections": { "type": "array" },
+        "keyFigures": { "type": "array" },
+        "lastUpdated": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["pageId", "title", "sections"]
+    },
+    "MultimediaItem": {
+      "title": "MultimediaItem",
+      "description": "Photo ou vidéo de la galerie du village",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "album": { "type": "string" },
+        "type": { "type": "string", "enum": ["photo", "video"] },
+        "mediaUrl": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "duration": { "type": "string" },
+        "caption": { "type": "string" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "author": { "type": "string" },
+        "viewsCount": { "type": "number" }
+      },
+      "required": ["id", "title", "album", "type", "mediaUrl"]
+    },
+    "Publication": {
+      "title": "Publication",
+      "description": "Article ou avis officiel",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "content": { "type": "array" },
+        "category": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "date": { "type": "string" },
+        "author": { "type": "string" },
+        "isUrgent": { "type": "boolean" },
+        "published": { "type": "boolean" }
+      },
+      "required": ["id", "title", "category", "date", "published"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Chantier de développement communautaire",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "sector": { "type": "string" },
+        "status": { "type": "string" },
+        "progressPercentage": { "type": "number" },
+        "budgetEstimated": { "type": "string" },
+        "fundsRaised": { "type": "string" },
+        "description": { "type": "string" },
+        "goals": { "type": "array" },
+        "beneficiaries": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "published": { "type": "boolean" }
+      },
+      "required": ["id", "title", "sector", "status", "progressPercentage"]
+    },
+    "SiteSetting": {
+      "title": "SiteSetting",
+      "description": "Paramètres généraux de configuration du portail",
+      "type": "object",
+      "properties": {
+        "siteTitle": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "slogan": { "type": "string" },
+        "chiefTitle": { "type": "string" },
+        "chiefName": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "secretariatHours": { "type": "string" },
+        "emergencyBannerActive": { "type": "boolean" },
+        "emergencyBannerText": { "type": "string" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["siteTitle", "chiefName"]
+    }
+  },
+  "firestore": {
+    "/admin_users/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Comptes des 5 administrateurs autorisés avec rôles et droits"
+    },
+    "/village_pages/{pageId}": {
+      "schema": { "$ref": "#/entities/PageContent" },
+      "description": "Contenus et sections éditables des 26 pages du village"
+    },
+    "/village_media/{mediaId}": {
+      "schema": { "$ref": "#/entities/MultimediaItem" },
+      "description": "Galerie photos et vidéos ajoutées ou retirées par les administrateurs"
+    },
+    "/village_publications/{pubId}": {
+      "schema": { "$ref": "#/entities/Publication" },
+      "description": "Articles d'actualité et annonces officielles"
+    },
+    "/village_projects/{projId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Projets de développement et suivi de financement"
+    },
+    "/village_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSetting" },
+      "description": "Identité officielle et paramètres globaux du village"
+    }
+  }
+}

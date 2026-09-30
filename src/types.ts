@@ -195,6 +195,8 @@ export interface AdminUser {
   lastLogin?: string;
   createdAt: string;
   avatar?: string;
+  addedBy?: string;
+  isSuperAdmin?: boolean;
 }
 
 export interface SiteSettings {
@@ -206,6 +208,7 @@ export interface SiteSettings {
   contactEmail: string;
   contactPhone: string;
   whatsappNumber: string;
+  whatsappNumberSecondary?: string;
   whatsappMessagePreset: string;
   secretariatHours: string;
   locationSummary: string;

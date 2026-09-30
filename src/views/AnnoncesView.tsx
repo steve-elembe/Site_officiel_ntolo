@@ -5,7 +5,7 @@ import {
   Check, Filter, Megaphone, Printer, Pin
 } from 'lucide-react';
 import { PageId, PublicationItem } from '../types';
-import { getStoredPublications } from '../services/publicationService';
+import { getStoredPublications, subscribePublications } from '../services/publicationService';
 import { AdminPublicationModal } from '../components/AdminPublicationModal';
 import { VILLAGE_INFO } from '../data/villageData';
 
@@ -30,9 +30,19 @@ export const AnnoncesView: React.FC<AnnoncesViewProps> = ({
 
   useEffect(() => {
     loadAnnouncements();
+
+    // Listener Firestore temps réel
+    const unsubFirestore = subscribePublications((freshPubs) => {
+      setPublications(freshPubs);
+    });
+
     const handleStorageUpdate = () => loadAnnouncements();
     window.addEventListener('ntolo_publications_updated', handleStorageUpdate);
-    return () => window.removeEventListener('ntolo_publications_updated', handleStorageUpdate);
+
+    return () => {
+      unsubFirestore();
+      window.removeEventListener('ntolo_publications_updated', handleStorageUpdate);
+    };
   }, []);
 
   // Filter for Announcements (category 'Annonces' or has isUrgent)

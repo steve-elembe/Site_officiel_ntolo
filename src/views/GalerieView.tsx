@@ -10,7 +10,8 @@ import { PageId, GalleryAlbum, MultimediaItem, PatrimoineItem } from '../types';
 import {
   ALBUMS_LIST,
   getStoredMedia,
-  getStoredPatrimoine
+  getStoredPatrimoine,
+  subscribeMedia
 } from '../services/galleryService';
 import { AdminGalleryModal } from '../components/AdminGalleryModal';
 
@@ -46,12 +47,22 @@ export const GalerieView: React.FC<GalerieViewProps> = ({ onNavigate }) => {
   // Share notification
   const [copyFeedback, setCopyFeedback] = useState(false);
 
-  // Listen to updates from localStorage service
+  // Listen to updates from Firestore (onSnapshot) and localStorage service
   useEffect(() => {
     loadData();
+
+    // Listener Firestore en temps réel
+    const unsubFirestore = subscribeMedia((freshMedia) => {
+      setMediaItems(freshMedia);
+    });
+
     const handleUpdate = () => loadData();
     window.addEventListener('ntolo_gallery_updated', handleUpdate);
-    return () => window.removeEventListener('ntolo_gallery_updated', handleUpdate);
+
+    return () => {
+      unsubFirestore();
+      window.removeEventListener('ntolo_gallery_updated', handleUpdate);
+    };
   }, []);
 
   const loadData = () => {

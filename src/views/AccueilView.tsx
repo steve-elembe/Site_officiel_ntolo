@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Compass, Users, Landmark, Target, HeartPulse, ChevronRight,
   Sparkles, Award, ArrowRight, ShieldCheck, MapPin, Calendar,
@@ -7,7 +7,7 @@ import {
   Info, ExternalLink, BookOpen, BookMarked, GraduationCap,
   Egg, ShoppingBag, Hammer, Trees, Building2
 } from 'lucide-react';
-import { PageId, NewsItem, ProjectItem, GalleryItem } from '../types';
+import { PageId, NewsItem, ProjectItem, GalleryItem, PublicationItem, EventItem, SiteSettings, MultimediaItem } from '../types';
 import {
   VILLAGE_INFO,
   LOGO_CONFIG,
@@ -24,8 +24,18 @@ import {
   SAMPLE_EVENTS,
   SAMPLE_GALLERY
 } from '../data/villageData';
-import { getStoredPublications } from '../services/publicationService';
+import { getStoredPublications, subscribePublications } from '../services/publicationService';
 import { NtoloLogo } from '../components/NtoloLogo';
+import { usePageContent } from '../hooks/usePageContent';
+import {
+  getSiteSettings,
+  subscribeSiteSettings,
+  getStoredEvents,
+  subscribeEvents,
+  getStoredProjects,
+  subscribeProjects,
+} from '../services/adminService';
+import { getStoredMedia, subscribeMedia } from '../services/galleryService';
 
 interface AccueilViewProps {
   onNavigate: (page: PageId) => void;
@@ -36,6 +46,42 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
   onNavigate,
   onSelectNews,
 }) => {
+  const pageContent = usePageContent('accueil');
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(getSiteSettings());
+  const [publications, setPublications] = useState<PublicationItem[]>(getStoredPublications());
+  const [events, setEvents] = useState<(EventItem & { published: boolean })[]>(getStoredEvents());
+  const [projects, setProjects] = useState<(ProjectItem & { published?: boolean })[]>(getStoredProjects());
+  const [mediaList, setMediaList] = useState<MultimediaItem[]>(getStoredMedia());
+
+  // Listeners Firestore en temps réel (onSnapshot) pour mise à jour instantanée sans rechargement
+  useEffect(() => {
+    const unsubSettings = subscribeSiteSettings((freshSettings) => {
+      setSiteSettings(freshSettings);
+    });
+    const unsubPubs = subscribePublications((freshPubs) => {
+      setPublications(freshPubs);
+    });
+    const unsubEvents = subscribeEvents((freshEvents) => {
+      setEvents(freshEvents);
+    });
+    const unsubProjects = subscribeProjects((freshProjects) => {
+      setProjects(freshProjects);
+    });
+    const unsubMedia = subscribeMedia((freshMedia) => {
+      setMediaList(freshMedia);
+    });
+
+    return () => {
+      unsubSettings();
+      unsubPubs();
+      unsubEvents();
+      unsubProjects();
+      unsubMedia();
+    };
+  }, []);
+
+  const displayKeyFigures = pageContent.keyFigures && pageContent.keyFigures.length > 0 ? pageContent.keyFigures : KEY_FIGURES;
+
   // Modal pour la promesse de contribution citoyenne
   const [pledgeModalProject, setPledgeModalProject] = useState<ProjectItem | null>(null);
   const [pledgeAmount, setPledgeAmount] = useState('25000');
@@ -87,7 +133,11 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0" />
             <p className="font-medium text-[12px] sm:text-xs leading-tight">
-              <span className="font-bold">Portail Officiel en Ligne :</span> Certaines données historiques et administratives détaillées sont en cours de validation par la Chefferie et portent la mention <span className="underline font-semibold">[À compléter]</span>.
+              {pageContent.provisionalNotice || (
+                <>
+                  <span className="font-bold">Portail Officiel en Ligne :</span> Certaines données historiques et administratives détaillées sont en cours de validation par la Chefferie et portent la mention <span className="underline font-semibold">[À compléter]</span>.
+                </>
+              )}
             </p>
           </div>
           <span className="hidden md:inline-block text-[11px] font-semibold text-amber-800 whitespace-nowrap bg-amber-100/80 px-2 py-0.5 rounded border border-amber-300">
@@ -122,7 +172,7 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
           {/* Ruban républicain miniature & badge institutionnel */}
           <div className="inline-flex items-center space-x-2 bg-emerald-950/80 backdrop-blur-md border border-amber-400/50 px-4 py-1.5 rounded-full text-xs font-semibold text-amber-300 shadow-md">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>RÉPUBLIQUE DU CAMEROUN • CHEFFERIE DE 3E DEGRÉ</span>
+            <span>{pageContent.badge || 'RÉPUBLIQUE DU CAMEROUN • CHEFFERIE DE 3E DEGRÉ'}</span>
           </div>
 
           {/* Logo temporaire emblématique & Nom du village */}
@@ -132,12 +182,12 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
 
           {/* Slogan provisoire mis en valeur */}
           <p className="text-sm sm:text-base text-amber-200 font-serif italic max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
-            « {SLOGAN_CONFIG.slogan} »
+            « {siteSettings.slogan || SLOGAN_CONFIG.slogan} »
           </p>
 
           {/* Courte présentation */}
           <p className="text-sm sm:text-lg text-stone-200/95 font-medium max-w-2xl mx-auto leading-relaxed pt-1">
-            {HERO_CONFIG.shortSummary}
+            {pageContent.description || HERO_CONFIG.shortSummary}
           </p>
 
           {/* 4. Boutons requis "Découvrir Ntolo" et "Actualités" + Raccourcis */}
@@ -210,7 +260,7 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {KEY_FIGURES.map((item) => (
+          {displayKeyFigures.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-2xl p-5 border border-stone-200/90 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all duration-200 flex flex-col justify-between group"
@@ -426,7 +476,7 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
             </div>
 
             <div className="space-y-3">
-              {getStoredPublications()
+              {publications
                 .filter((p) => p.published)
                 .slice(0, 3)
                 .map((news) => (
@@ -488,12 +538,15 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
             </div>
 
             <div className="space-y-3">
-              {SAMPLE_EVENTS.slice(0, 3).map((ev) => (
-                <div
-                  key={ev.id}
-                  onClick={() => onNavigate('evenements')}
-                  className="bg-white p-4 rounded-2xl border border-stone-200 hover:border-amber-300 hover:shadow-sm transition-all cursor-pointer space-y-2 group"
-                >
+              {events
+                .filter((ev) => ev.published !== false)
+                .slice(0, 3)
+                .map((ev) => (
+                  <div
+                    key={ev.id}
+                    onClick={() => onNavigate('evenements')}
+                    className="bg-white p-4 rounded-2xl border border-stone-200 hover:border-amber-300 hover:shadow-sm transition-all cursor-pointer space-y-2 group"
+                  >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-amber-800 flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                       <Calendar className="w-3 h-3 text-amber-700" />
@@ -559,7 +612,10 @@ export const AccueilView: React.FC<AccueilViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {SAMPLE_PROJECTS.slice(0, 2).map((project) => (
+          {projects
+            .filter((p) => p.published !== false)
+            .slice(0, 2)
+            .map((project) => (
             <div
               key={project.id}
               className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"

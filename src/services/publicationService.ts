@@ -1,4 +1,6 @@
 import { PublicationItem, ArticleCategory } from '../types';
+import { db } from './firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 const STORAGE_KEY = 'ntolo_official_publications_v1';
 
@@ -353,6 +355,15 @@ export function upsertPublication(item: PublicationItem): void {
     all.unshift(item);
   }
   saveStoredPublications(all);
+
+  // Sync to Firestore in real time
+  try {
+    setDoc(doc(db, 'village_publications', item.id), item).catch((err) => {
+      console.warn('Firestore setDoc village_publications error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
 }
 
 export const savePublication = upsertPublication;
@@ -361,6 +372,15 @@ export function deletePublication(id: string): void {
   const all = getStoredPublications();
   const filtered = all.filter((p) => p.id !== id);
   saveStoredPublications(filtered);
+
+  // Delete from Firestore
+  try {
+    deleteDoc(doc(db, 'village_publications', id)).catch((err) => {
+      console.warn('Firestore deleteDoc village_publications error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore offline:', e);
+  }
 }
 
 export function togglePublicationPublished(id: string): PublicationItem[] {
@@ -369,9 +389,106 @@ export function togglePublicationPublished(id: string): PublicationItem[] {
   if (item) {
     item.published = !item.published;
     saveStoredPublications(all);
+
+    try {
+      setDoc(doc(db, 'village_publications', id), item).catch((err) => {
+        console.warn('Firestore togglePublicationPublished error:', err);
+      });
+    } catch (e) {
+      console.warn('Firestore offline:', e);
+    }
   }
   return all;
 }
+
+/**
+ * Real-time listener for publications collection from Firestore
+ */
+export function subscribePublications(
+  callback: (publications: PublicationItem[]) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const colRef = collection(db, 'village_publications');
+    const unsub = onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestorePubs: PublicationItem[] = [];
+        snapshot.forEach((docSnap) => {
+          firestorePubs.push(docSnap.data() as PublicationItem);
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(firestorePubs));
+        window.dispatchEvent(new Event('ntolo_publications_updated'));
+        callback(firestorePubs);
+      } else {
+        callback(getStoredPublications());
+      }
+    }, (err) => {
+      console.warn('Firestore subscribePublications error:', err);
+      callback(getStoredPublications());
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribePublications failed:', e);
+    return () => {};
+  }
+}
+
+/**
+ * Real-time listener for a single publication by id
+ */
+export function subscribePublication(
+  id: string,
+  callback: (publication: PublicationItem | null) => void
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  try {
+    const docRef = doc(db, 'village_publications', id);
+    const unsub = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data() as PublicationItem;
+        callback(data);
+      } else {
+        const local = getPublicationById(id);
+        callback(local || null);
+      }
+    }, (err) => {
+      console.warn('Firestore subscribePublication error:', err);
+      const local = getPublicationById(id);
+      callback(local || null);
+    });
+    return unsub;
+  } catch (e) {
+    console.warn('Firestore subscribePublication failed:', e);
+    return () => {};
+  }
+}
+
+/**
+ * Initialisation automatique de la synchronisation Firestore
+ */
+export function initPublicationsSync(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const colRef = collection(db, 'village_publications');
+    onSnapshot(colRef, (snapshot) => {
+      if (!snapshot.empty) {
+        const firestorePubs: PublicationItem[] = [];
+        snapshot.forEach((docSnap) => {
+          firestorePubs.push(docSnap.data() as PublicationItem);
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(firestorePubs));
+        window.dispatchEvent(new Event('ntolo_publications_updated'));
+      }
+    }, (err) => {
+      console.warn('Firestore initPublicationsSync error:', err);
+    });
+  } catch (e) {
+    console.warn('Firestore initPublicationsSync failed:', e);
+  }
+}
+
+// Lancer la synchronisation dès le chargement du module
+initPublicationsSync();
 
 export function incrementPublicationViews(id: string): void {
   const all = getStoredPublications();

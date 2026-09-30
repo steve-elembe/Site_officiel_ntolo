@@ -10,7 +10,7 @@ import {
   Facebook, Twitter, Linkedin, Youtube, Copy, Check, ExternalLink, Compass, Navigation
 } from 'lucide-react';
 import { PageId, CommunitySubmission, SiteSettings } from '../types';
-import { getSiteSettings, EVENT_ADMIN_DATA_CHANGED } from '../services/adminService';
+import { getSiteSettings, formatWhatsAppUrl, EVENT_ADMIN_DATA_CHANGED } from '../services/adminService';
 import { submitCommunityForm } from '../services/communityService';
 import { ConfirmationReceiptCard } from '../components/community/ConfirmationReceiptCard';
 import { AntiSpamSecurityBlock } from '../components/community/AntiSpamSecurityBlock';
@@ -131,11 +131,14 @@ export const ContactView: React.FC<ContactViewProps> = ({ onNavigate }) => {
     setIsHubOpen(true);
   };
 
-  const whatsappRaw = settings.whatsappNumber || '+237670001122';
-  const whatsappClean = whatsappRaw.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappClean}&text=${encodeURIComponent(
-    settings.whatsappMessagePreset || 'Bonjour le Secrétariat de Ntolo, je vous contacte via le portail officiel...'
-  )}`;
+  const line1 = settings.whatsappNumber || '+237699217761';
+  const line2 = settings.whatsappNumberSecondary || '+237694681840';
+  const presetMessage =
+    settings.whatsappMessagePreset ||
+    'Bonjour le Secrétariat de Ntolo, je vous contacte via le portail officiel...';
+
+  const whatsappUrl1 = formatWhatsAppUrl(line1, presetMessage);
+  const whatsappUrl2 = formatWhatsAppUrl(line2, presetMessage);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
@@ -210,20 +213,32 @@ export const ContactView: React.FC<ContactViewProps> = ({ onNavigate }) => {
                 <div className="flex-1">
                   <span className="font-bold text-slate-800 block">Téléphone & Standard :</span>
                   <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <a
-                      href={`tel:${settings.contactPhone?.split('/')[0]?.trim() || '+237670001122'}`}
-                      className="font-mono font-bold text-emerald-800 hover:underline"
-                    >
-                      {settings.contactPhone}
-                    </a>
+                    <span className="font-mono font-bold text-emerald-800">
+                      {settings.contactPhone || '(+237) 699 21 77 61 / 694 68 18 40'}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => handleCopy(settings.contactPhone, 'phone')}
+                      onClick={() => handleCopy(settings.contactPhone || '699217761 / 694681840', 'phone')}
                       className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
-                      title="Copier le numéro"
+                      title="Copier les numéros"
                     >
                       {copiedPhone ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    <a
+                      href="tel:+237699217761"
+                      className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline font-mono"
+                    >
+                      <Phone className="w-3 h-3" /> 699 21 77 61
+                    </a>
+                    <span className="text-slate-300">•</span>
+                    <a
+                      href="tel:+237694681840"
+                      className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline font-mono"
+                    >
+                      <Phone className="w-3 h-3" /> 694 68 18 40
+                    </a>
                   </div>
                 </div>
               </div>
@@ -252,17 +267,31 @@ export const ContactView: React.FC<ContactViewProps> = ({ onNavigate }) => {
                 </div>
               </div>
 
-              {/* WhatsApp direct button */}
-              <div className="pt-2">
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4 text-emerald-200" />
-                  <span>Écrire sur WhatsApp ({whatsappRaw})</span>
-                </a>
+              {/* WhatsApp direct buttons for both numbers */}
+              <div className="pt-2 space-y-2">
+                <span className="text-[11px] font-bold text-slate-700 block">
+                  Envoyer un message au Secrétariat par WhatsApp :
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <a
+                    href={whatsappUrl1}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>Ligne 1 : 699 21 77 61</span>
+                  </a>
+                  <a
+                    href={whatsappUrl2}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>Ligne 2 : 694 68 18 40</span>
+                  </a>
+                </div>
               </div>
             </div>
 
